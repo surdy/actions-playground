@@ -1,0 +1,67 @@
+# This workflow tests using array of objects as one of the matrix variables
+name: Matrix array of objects
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.fedora_version }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: kernel-cache
+    runs-on: ${{ matrix.platform == 'x86_64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - kernel_flavor: asus
+            platforms: 'x86_64'
+          - kernel_flavor: fsync
+            platforms: 'x86_64'
+          - kernel_flavor: fsync-ba
+            platforms: 'x86_64'
+          - kernel_flavor: bazzite
+            platforms: 'x86_64, aarch64'
+          - kernel_flavor: surface
+            platforms: 'x86_64'
+          - kernel_flavor: main
+            platforms: 'x86_64, aarch64'
+          - kernel_flavor: coreos-stable
+            platforms: 'x86_64, aarch64'
+          - kernel_flavor: coreos-testing
+            platforms: 'x86_64, aarch64'
+        fedora_version:
+          - 40
+          - 41
+        exclude:
+          - fedora_version: 40
+            variant:
+            - kernel_flavor: asus
+              platforms: 'x86_64'
+          - fedora_version: 41
+            variant:
+            - kernel_flavor: fsync
+              platforms: 'x86_64'
+          - fedora_version: 41
+            variant: 
+            - kernel_flavor: fsync-ba
+              platforms: 'x86_64'
+          - fedora_version: 40
+            variant:
+            - kernel_flavor: bazzite
+              platforms: 'x86_64, aarch64'
+          - fedora_version: 40
+            variant:
+            - kernel_flavor: coreos-testing
+              platforms: 'x86_64, aarch64'
+
+
+    steps:
+      - name: Test step
+        run: |
+          echo "${{ matrix.fedora_version }} ${{ matrix.variant.kernel_flavor }} ${{ matrix.variant.platform }}" 
