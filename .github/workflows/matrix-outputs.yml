@@ -1,0 +1,85 @@
+# This workflow tests getting outputs from a matrix based job to be used by a subequent job
+# The hack used here is to upload file with job outputs as an artifact
+# The subsequesnt job downloads the files as artifacts and then reads the file to get the output
+name: Matrix outputs
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.fedora_version }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: kernel-cache
+    runs-on: ${{ matrix.platform == 'x86_64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        kernel_flavor:
+          - asus
+          - fsync
+          - fsync-ba
+          - bazzite
+          - surface
+          - main
+          - coreos-stable
+          - coreos-testing
+        fedora_version:
+          - 40
+          - 41
+        platform:
+          - x86_64
+          - aarch64
+        exclude:
+          - fedora_version: 40
+            kernel_flavor: asus
+          - fedora_version: 41
+            kernel_flavor: fsync
+          - fedora_version: 41
+            kernel_flavor: fsync-ba
+          - fedora_version: 40
+            kernel_flavor: bazzite
+          - fedora_version: 40
+            kernel_flavor: coreos-testing
+          - kernel_flavor: asus
+            platform: aarch64
+          - kernel_flavor: fsync
+            platform: aarch64
+          - kernel_flavor: fsync-ba
+            platform: aarch64
+          - kernel_flavor: surface
+            platform: aarch64
+
+
+    steps:
+      - name: Generate Outputs
+        env:
+          IMAGE_DIGEST: 'random-text'
+        run: |
+          mkdir -p /tmp/outputs/digests
+          echo "$IMAGE_DIGEST" > /tmp/outputs/digests/${{matrix.kernel_flavor}}-${{matrix.fedora_version}}-${{ matrix.platform }}.txt
+
+      - name: Upload Output Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.kernel_flavor}}-${{matrix.fedora_version}}-${{ matrix.platform }}
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            /tmp/outputs/digests/*.txt
+
+  manifest:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Fetch Build Outputs
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: List digests
+        run: ls -R 
