@@ -1,0 +1,12 @@
+# This workflow tests array input to reusable workflow (reusable_workflow_for_array_input.yml
+# Hack is to take string representation of JSON and use fromJSON
+name: Array input to reusable workflow
+on:
+  workflow_dispatch:
+
+jobs:
+  test-array:
+    uses: ./.github/workflows/reusable_workflow_for_array_input.yml
+    secrets: inherit
+    with:
+      platforms: '["x86_64", "aarch64"]'

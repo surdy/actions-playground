@@ -1,0 +1,20 @@
+# This is the reusable workflow to be called with array input from array_input_for_reuable_workflow.yml
+name: Reusable workflow for array input
+on:
+  workflow_call:
+    inputs:
+      platforms:
+        description: 'Platforms to build for'
+        required: true
+        type: string
+jobs:
+  build:
+    name: build-kernel
+    runs-on: ${{ matrix.platform == 'x86_64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    strategy:
+      matrix:
+        platform: ${{ fromJSON(inputs.platforms) }}
+
+    steps:
+      - name: Test array input
+        run: uname -a
